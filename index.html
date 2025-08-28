@@ -2,19 +2,26 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Protótipo - Consulta Planilha</title>
+  <title>Consulta Multiplas Abas</title>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
     h1 { color: #333; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f2f2f2; }
-    #search { margin-top: 10px; padding: 8px; width: 300px; border-radius: 5px; border: 1px solid #ccc; }
+    th { background-color: #f2f2f2; cursor: pointer; }
+    #search, #sheetSelect { margin-top: 10px; padding: 8px; width: 300px; border-radius: 5px; border: 1px solid #ccc; display: block; }
   </style>
 </head>
 <body>
-  <h1>Consulta de Dados da Planilha</h1>
+  <h1>Consulta de Dados (Múltiplas Abas)</h1>
+
+  <select id="sheetSelect">
+    <option value="Test+Sheet">Página 1</option>
+    <option value="Second+Sheet">Página 2</option>
+    <!-- Adicione mais abas aqui -->
+  </select>
+
   <input type="text" id="search" placeholder="Pesquisar..." />
 
   <table id="dataTable">
@@ -25,18 +32,22 @@
   </table>
 
   <script>
-    // URL da planilha pública de exemplo (OpenSheet)
-    const sheetURL = "https://opensheet.elk.sh/11Wqu-0Ndv0HnRrYr_S-wHkDB0mXh_KqBhcjbqUeSLS8/Página1";
+    const spreadsheetID = "1o5t26He2DzTweYeleXOGiDjlU4Jkx896f95VUHVgS8U";
 
-    async function loadData() {
+    async function loadData(sheetName) {
       try {
+        const sheetURL = `https://opensheet.elk.sh/${spreadsheetID}/${sheetName}`;
         const res = await axios.get(sheetURL);
         const data = res.data;
+
+        const headerRow = document.getElementById("headerRow");
+        headerRow.innerHTML = ""; // limpa cabeçalho antigo
+        const tbody = document.querySelector("#dataTable tbody");
+        tbody.innerHTML = ""; // limpa linhas antigas
 
         if (data.length === 0) return;
 
         // Cabeçalhos
-        const headerRow = document.getElementById("headerRow");
         Object.keys(data[0]).forEach(key => {
           const th = document.createElement("th");
           th.textContent = key;
@@ -44,7 +55,6 @@
         });
 
         // Linhas
-        const tbody = document.querySelector("#dataTable tbody");
         data.forEach(row => {
           const tr = document.createElement("tr");
           Object.values(row).forEach(value => {
@@ -55,7 +65,7 @@
           tbody.appendChild(tr);
         });
 
-        // Filtro de pesquisa
+        // Filtro
         document.getElementById("search").addEventListener("keyup", function() {
           const filter = this.value.toLowerCase();
           const rows = tbody.getElementsByTagName("tr");
@@ -77,7 +87,15 @@
       }
     }
 
-    loadData();
+    // Inicializa com a primeira aba
+    const sheetSelect = document.getElementById("sheetSelect");
+    loadData(sheetSelect.value);
+
+    // Troca de aba
+    sheetSelect.addEventListener("change", () => {
+      loadData(sheetSelect.value);
+      document.getElementById("search").value = ""; // limpa pesquisa
+    });
   </script>
 </body>
 </html>
